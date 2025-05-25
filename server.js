@@ -129,4 +129,5 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running on port ${PORT}`);
     console.log(`Static files being served from: ${path.join(__dirname, 'public')}`);
+    console.log(`Current directory: ${__dirname}`);
 }); 
