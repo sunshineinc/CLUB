@@ -22,7 +22,8 @@ const gameState = {
     currentMinigame: null,
     otherPlayers: new Map(),
     socket: null,
-    currentLocation: 'town'
+    currentLocation: 'town',
+    moveSpeed: 0.15 // Velocidade de movimento ajustada
 };
 
 // Three.js variables
@@ -151,7 +152,7 @@ function initScene() {
 }
 
 function createGround() {
-    const groundGeometry = new THREE.PlaneGeometry(50, 50);
+    const groundGeometry = new THREE.PlaneGeometry(100, 100); // Aumentado o tamanho do chão
     const groundMaterial = new THREE.MeshStandardMaterial({ 
         color: 0x8BC34A,
         roughness: 0.8,
@@ -253,7 +254,7 @@ function animate() {
     // Update penguin position and animation
     if (gameState.penguin.model) {
         if (gameState.isMoving) {
-            const speed = 5 * delta;
+            const speed = gameState.moveSpeed;
             if (gameState.direction === 'left') {
                 gameState.penguin.model.position.x -= speed;
                 gameState.penguin.model.rotation.y = Math.PI;
@@ -261,6 +262,11 @@ function animate() {
                 gameState.penguin.model.position.x += speed;
                 gameState.penguin.model.rotation.y = 0;
             }
+            
+            // Limitar movimento dentro dos limites do chão
+            const limit = 45; // Metade do tamanho do chão
+            gameState.penguin.model.position.x = Math.max(-limit, Math.min(limit, gameState.penguin.model.position.x));
+            gameState.penguin.model.position.z = Math.max(-limit, Math.min(limit, gameState.penguin.model.position.z));
             
             // Send position update to server
             if (gameState.socket && gameState.socket.readyState === WebSocket.OPEN) {
@@ -1031,6 +1037,7 @@ function createMap() {
 }
 
 function changeLocation(locationId) {
+    console.log('Changing location to:', locationId);
     gameState.currentLocation = locationId;
     
     // Enviar atualização para o servidor
@@ -1049,6 +1056,356 @@ function changeLocation(locationId) {
         case 'town':
             initScene();
             break;
-        // Adicionar outros casos conforme necessário
+        case 'sled':
+            initScene();
+            createDecorations('sled');
+            break;
+        case 'fishing':
+            initScene();
+            createDecorations('fishing');
+            break;
+        case 'dance':
+            initScene();
+            createDecorations('dance');
+            break;
     }
+    
+    // Criar decorações específicas para o local
+    createDecorations(locationId);
+}
+
+function createDecorations(location) {
+    // Remover decorações existentes
+    scene.children.forEach(child => {
+        if (child.userData && child.userData.isDecoration) {
+            scene.remove(child);
+        }
+    });
+
+    switch(location) {
+        case 'town':
+            createTownDecorations();
+            break;
+        case 'igloo':
+            createIglooDecorations();
+            break;
+        case 'sled':
+            createSledDecorations();
+            break;
+        case 'fishing':
+            createFishingDecorations();
+            break;
+        case 'dance':
+            createDanceDecorations();
+            break;
+    }
+}
+
+function createTownDecorations() {
+    // Criar árvores
+    for (let i = 0; i < 10; i++) {
+        const tree = createTree();
+        tree.position.set(
+            Math.random() * 80 - 40,
+            0,
+            Math.random() * 80 - 40
+        );
+        tree.userData = { isDecoration: true };
+        scene.add(tree);
+    }
+
+    // Criar bancos
+    for (let i = 0; i < 5; i++) {
+        const bench = createBench();
+        bench.position.set(
+            Math.random() * 60 - 30,
+            0,
+            Math.random() * 60 - 30
+        );
+        bench.rotation.y = Math.random() * Math.PI * 2;
+        bench.userData = { isDecoration: true };
+        scene.add(bench);
+    }
+
+    // Criar postes de luz
+    for (let i = 0; i < 8; i++) {
+        const lamp = createLampPost();
+        lamp.position.set(
+            Math.random() * 70 - 35,
+            0,
+            Math.random() * 70 - 35
+        );
+        lamp.userData = { isDecoration: true };
+        scene.add(lamp);
+    }
+}
+
+function createTree() {
+    const tree = new THREE.Group();
+    
+    // Tronco
+    const trunkGeometry = new THREE.CylinderGeometry(0.5, 0.7, 3, 8);
+    const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+    const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+    trunk.position.y = 1.5;
+    trunk.castShadow = true;
+    tree.add(trunk);
+    
+    // Copa
+    const leavesGeometry = new THREE.ConeGeometry(2, 4, 8);
+    const leavesMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
+    const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
+    leaves.position.y = 4;
+    leaves.castShadow = true;
+    tree.add(leaves);
+    
+    return tree;
+}
+
+function createBench() {
+    const bench = new THREE.Group();
+    
+    // Assento
+    const seatGeometry = new THREE.BoxGeometry(3, 0.3, 1);
+    const seatMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+    const seat = new THREE.Mesh(seatGeometry, seatMaterial);
+    seat.position.y = 0.5;
+    seat.castShadow = true;
+    bench.add(seat);
+    
+    // Pernas
+    const legGeometry = new THREE.BoxGeometry(0.2, 0.5, 1);
+    const legMaterial = new THREE.MeshStandardMaterial({ color: 0x696969 });
+    
+    const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
+    leftLeg.position.set(-1.3, 0.25, 0);
+    leftLeg.castShadow = true;
+    bench.add(leftLeg);
+    
+    const rightLeg = new THREE.Mesh(legGeometry, legMaterial);
+    rightLeg.position.set(1.3, 0.25, 0);
+    rightLeg.castShadow = true;
+    bench.add(rightLeg);
+    
+    return bench;
+}
+
+function createLampPost() {
+    const lamp = new THREE.Group();
+    
+    // Poste
+    const postGeometry = new THREE.CylinderGeometry(0.2, 0.2, 5, 8);
+    const postMaterial = new THREE.MeshStandardMaterial({ color: 0x696969 });
+    const post = new THREE.Mesh(postGeometry, postMaterial);
+    post.position.y = 2.5;
+    post.castShadow = true;
+    lamp.add(post);
+    
+    // Lâmpada
+    const bulbGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+    const bulbMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0xFFFF00,
+        emissive: 0xFFFF00,
+        emissiveIntensity: 0.5
+    });
+    const bulb = new THREE.Mesh(bulbGeometry, bulbMaterial);
+    bulb.position.y = 5;
+    lamp.add(bulb);
+    
+    // Adicionar luz
+    const light = new THREE.PointLight(0xFFFF00, 1, 10);
+    light.position.y = 5;
+    lamp.add(light);
+    
+    return lamp;
+}
+
+function createIglooDecorations() {
+    // Criar igloo
+    const iglooGeometry = new THREE.SphereGeometry(15, 32, 32, 0, Math.PI * 2, 0, Math.PI / 2);
+    const iglooMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0xFFFFFF,
+        roughness: 0.7,
+        metalness: 0.1
+    });
+    const igloo = new THREE.Mesh(iglooGeometry, iglooMaterial);
+    igloo.position.y = 7.5;
+    igloo.userData = { isDecoration: true };
+    scene.add(igloo);
+    
+    // Criar móveis
+    const furniture = [
+        { type: 'bed', position: [-5, 0, -5] },
+        { type: 'table', position: [0, 0, 0] },
+        { type: 'chair', position: [0, 0, 2] },
+        { type: 'bookshelf', position: [5, 0, -5] }
+    ];
+    
+    furniture.forEach(item => {
+        const mesh = createFurniture(item.type);
+        mesh.position.set(...item.position);
+        mesh.userData = { isDecoration: true };
+        scene.add(mesh);
+    });
+}
+
+function createFurniture(type) {
+    const furniture = new THREE.Group();
+    
+    switch(type) {
+        case 'bed':
+            const bedGeometry = new THREE.BoxGeometry(3, 0.5, 2);
+            const bedMaterial = new THREE.MeshStandardMaterial({ color: 0x4169E1 });
+            const bed = new THREE.Mesh(bedGeometry, bedMaterial);
+            bed.position.y = 0.25;
+            furniture.add(bed);
+            break;
+            
+        case 'table':
+            const tableGeometry = new THREE.BoxGeometry(2, 0.8, 2);
+            const tableMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+            const table = new THREE.Mesh(tableGeometry, tableMaterial);
+            table.position.y = 0.4;
+            furniture.add(table);
+            break;
+            
+        case 'chair':
+            const chairGeometry = new THREE.BoxGeometry(1, 1, 1);
+            const chairMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+            const chair = new THREE.Mesh(chairGeometry, chairMaterial);
+            chair.position.y = 0.5;
+            furniture.add(chair);
+            break;
+            
+        case 'bookshelf':
+            const shelfGeometry = new THREE.BoxGeometry(2, 3, 0.5);
+            const shelfMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+            const shelf = new THREE.Mesh(shelfGeometry, shelfMaterial);
+            shelf.position.y = 1.5;
+            furniture.add(shelf);
+            break;
+    }
+    
+    return furniture;
+}
+
+function createSledDecorations() {
+    // Criar pista de trenó
+    const trackGeometry = new THREE.BoxGeometry(20, 0.5, 100);
+    const trackMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0xFFFFFF,
+        roughness: 0.3,
+        metalness: 0.8
+    });
+    const track = new THREE.Mesh(trackGeometry, trackMaterial);
+    track.position.set(0, -0.25, 0);
+    track.rotation.x = -Math.PI / 12;
+    track.userData = { isDecoration: true };
+    scene.add(track);
+    
+    // Adicionar árvores de neve
+    for (let i = 0; i < 20; i++) {
+        const tree = createSnowTree();
+        tree.position.set(
+            Math.random() * 40 - 20,
+            0,
+            Math.random() * 80 - 40
+        );
+        tree.userData = { isDecoration: true };
+        scene.add(tree);
+    }
+}
+
+function createSnowTree() {
+    const tree = new THREE.Group();
+    
+    // Tronco
+    const trunkGeometry = new THREE.CylinderGeometry(0.3, 0.4, 2, 8);
+    const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+    const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+    trunk.position.y = 1;
+    tree.add(trunk);
+    
+    // Copa com neve
+    const leavesGeometry = new THREE.ConeGeometry(1.5, 3, 8);
+    const leavesMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
+    const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
+    leaves.position.y = 3;
+    tree.add(leaves);
+    
+    // Neve na copa
+    const snowGeometry = new THREE.SphereGeometry(1.2, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+    const snowMaterial = new THREE.MeshStandardMaterial({ color: 0xFFFFFF });
+    const snow = new THREE.Mesh(snowGeometry, snowMaterial);
+    snow.position.y = 3.5;
+    tree.add(snow);
+    
+    return tree;
+}
+
+function createFishingDecorations() {
+    // Criar lago
+    const lakeGeometry = new THREE.CircleGeometry(20, 32);
+    const lakeMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x1E90FF,
+        roughness: 0.2,
+        metalness: 0.8
+    });
+    const lake = new THREE.Mesh(lakeGeometry, lakeMaterial);
+    lake.rotation.x = -Math.PI / 2;
+    lake.userData = { isDecoration: true };
+    scene.add(lake);
+    
+    // Adicionar doca
+    const dockGeometry = new THREE.BoxGeometry(5, 0.5, 10);
+    const dockMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+    const dock = new THREE.Mesh(dockGeometry, dockMaterial);
+    dock.position.set(0, 0, -10);
+    dock.userData = { isDecoration: true };
+    scene.add(dock);
+    
+    // Adicionar árvores
+    for (let i = 0; i < 15; i++) {
+        const tree = createTree();
+        tree.position.set(
+            Math.random() * 40 - 20,
+            0,
+            Math.random() * 40 - 20
+        );
+        tree.userData = { isDecoration: true };
+        scene.add(tree);
+    }
+}
+
+function createDanceDecorations() {
+    // Criar pista de dança
+    const danceFloorGeometry = new THREE.BoxGeometry(20, 0.2, 20);
+    const danceFloorMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x000000,
+        roughness: 0.3,
+        metalness: 0.8
+    });
+    const danceFloor = new THREE.Mesh(danceFloorGeometry, danceFloorMaterial);
+    danceFloor.userData = { isDecoration: true };
+    scene.add(danceFloor);
+    
+    // Adicionar luzes
+    for (let i = 0; i < 8; i++) {
+        const light = new THREE.PointLight(0xFF0000, 1, 10);
+        light.position.set(
+            Math.random() * 16 - 8,
+            5,
+            Math.random() * 16 - 8
+        );
+        light.userData = { isDecoration: true };
+        scene.add(light);
+    }
+    
+    // Adicionar bar
+    const barGeometry = new THREE.BoxGeometry(10, 1, 1);
+    const barMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+    const bar = new THREE.Mesh(barGeometry, barMaterial);
+    bar.position.set(0, 0.5, -10);
+    bar.userData = { isDecoration: true };
+    scene.add(bar);
 } 
