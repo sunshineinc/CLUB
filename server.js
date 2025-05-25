@@ -9,6 +9,7 @@ const wss = new WebSocket.Server({ server });
 
 // Configurar middleware para arquivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
 // Rota principal
 app.get('/', (req, res) => {

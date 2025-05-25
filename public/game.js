@@ -125,24 +125,78 @@ function createGround() {
 }
 
 function loadPenguinModel() {
-    const loader = new THREE.GLTFLoader();
-    loader.load('assets/penguin.glb', (gltf) => {
-        gameState.penguin.model = gltf.scene;
-        gameState.penguin.model.traverse((node) => {
-            if (node.isMesh) {
-                node.castShadow = true;
-                node.receiveShadow = true;
-            }
-        });
-        
-        // Set up animations
-        mixer = new THREE.AnimationMixer(gameState.penguin.model);
-        gltf.animations.forEach((clip) => {
-            animations[clip.name] = mixer.clipAction(clip);
-        });
-        
-        scene.add(gameState.penguin.model);
+    // Criar um pinguim simples usando geometrias básicas
+    const bodyGeometry = new THREE.SphereGeometry(1, 32, 32);
+    const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 });
+    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+    
+    const bellyGeometry = new THREE.SphereGeometry(0.8, 32, 32);
+    const bellyMaterial = new THREE.MeshStandardMaterial({ color: 0xFFFFFF });
+    const belly = new THREE.Mesh(bellyGeometry, bellyMaterial);
+    belly.position.z = 0.3;
+    
+    const headGeometry = new THREE.SphereGeometry(0.7, 32, 32);
+    const headMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 });
+    const head = new THREE.Mesh(headGeometry, headMaterial);
+    head.position.y = 1.2;
+    
+    const beakGeometry = new THREE.ConeGeometry(0.2, 0.5, 32);
+    const beakMaterial = new THREE.MeshStandardMaterial({ color: 0xFFA500 });
+    const beak = new THREE.Mesh(beakGeometry, beakMaterial);
+    beak.position.z = 0.5;
+    beak.position.y = 1.2;
+    beak.rotation.x = -Math.PI / 2;
+    
+    const leftEyeGeometry = new THREE.SphereGeometry(0.1, 32, 32);
+    const eyeMaterial = new THREE.MeshStandardMaterial({ color: 0xFFFFFF });
+    const leftEye = new THREE.Mesh(leftEyeGeometry, eyeMaterial);
+    leftEye.position.set(0.2, 1.3, 0.5);
+    
+    const rightEyeGeometry = new THREE.SphereGeometry(0.1, 32, 32);
+    const rightEye = new THREE.Mesh(rightEyeGeometry, eyeMaterial);
+    rightEye.position.set(-0.2, 1.3, 0.5);
+    
+    const leftWingGeometry = new THREE.BoxGeometry(0.2, 1, 0.5);
+    const wingMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 });
+    const leftWing = new THREE.Mesh(leftWingGeometry, wingMaterial);
+    leftWing.position.set(1, 0, 0);
+    
+    const rightWingGeometry = new THREE.BoxGeometry(0.2, 1, 0.5);
+    const rightWing = new THREE.Mesh(rightWingGeometry, wingMaterial);
+    rightWing.position.set(-1, 0, 0);
+    
+    const leftFootGeometry = new THREE.BoxGeometry(0.3, 0.1, 0.5);
+    const footMaterial = new THREE.MeshStandardMaterial({ color: 0xFFA500 });
+    const leftFoot = new THREE.Mesh(leftFootGeometry, footMaterial);
+    leftFoot.position.set(0.3, -1, 0);
+    
+    const rightFootGeometry = new THREE.BoxGeometry(0.3, 0.1, 0.5);
+    const rightFoot = new THREE.Mesh(rightFootGeometry, footMaterial);
+    rightFoot.position.set(-0.3, -1, 0);
+    
+    // Criar o grupo do pinguim
+    const penguin = new THREE.Group();
+    penguin.add(body);
+    penguin.add(belly);
+    penguin.add(head);
+    penguin.add(beak);
+    penguin.add(leftEye);
+    penguin.add(rightEye);
+    penguin.add(leftWing);
+    penguin.add(rightWing);
+    penguin.add(leftFoot);
+    penguin.add(rightFoot);
+    
+    // Adicionar sombras
+    penguin.traverse((node) => {
+        if (node.isMesh) {
+            node.castShadow = true;
+            node.receiveShadow = true;
+        }
     });
+    
+    gameState.penguin.model = penguin;
+    scene.add(penguin);
 }
 
 function animate() {
