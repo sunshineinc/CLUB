@@ -6,7 +6,7 @@
     "scripts": {
         "start": "node server.js",
         "dev": "nodemon server.js",
-        "postinstall": "mkdir -p public && cp -r public/* public/ && echo 'Post-install script completed'"
+        "postinstall": "mkdir -p public && echo 'Post-install script completed'"
     },
     "keywords": [
         "game",
