@@ -77,11 +77,33 @@ closeIglooButton.addEventListener('click', () => iglooPanel.classList.add('hidde
 
 // Initialize Three.js scene
 function initScene() {
+    console.log('Initializing scene...');
+    
+    // Create scene
     scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87CEEB); // Sky blue background
+    
+    // Create camera
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('game-canvas'), antialias: true });
+    camera.position.set(0, 5, 10);
+    camera.lookAt(0, 0, 0);
+    
+    // Create renderer
+    const canvas = document.getElementById('game-canvas');
+    if (!canvas) {
+        console.error('Canvas element not found!');
+        return;
+    }
+    
+    renderer = new THREE.WebGLRenderer({ 
+        canvas: canvas,
+        antialias: true,
+        alpha: true
+    });
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
     renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     
     // Add lights
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -90,6 +112,8 @@ function initScene() {
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
     directionalLight.position.set(10, 20, 10);
     directionalLight.castShadow = true;
+    directionalLight.shadow.mapSize.width = 2048;
+    directionalLight.shadow.mapSize.height = 2048;
     scene.add(directionalLight);
     
     // Create ground
@@ -98,10 +122,6 @@ function initScene() {
     // Load penguin model
     loadPenguinModel();
     
-    // Position camera
-    camera.position.set(0, 5, 10);
-    camera.lookAt(0, 0, 0);
-    
     // Add orbit controls
     controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
@@ -109,6 +129,8 @@ function initScene() {
     
     // Start animation loop
     animate();
+    
+    console.log('Scene initialized successfully');
 }
 
 function createGround() {
@@ -125,6 +147,8 @@ function createGround() {
 }
 
 function loadPenguinModel() {
+    console.log('Loading penguin model...');
+    
     // Criar um pinguim simples usando geometrias básicas
     const bodyGeometry = new THREE.SphereGeometry(1, 32, 32);
     const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 });
@@ -197,6 +221,8 @@ function loadPenguinModel() {
     
     gameState.penguin.model = penguin;
     scene.add(penguin);
+    
+    console.log('Penguin model loaded successfully');
 }
 
 function animate() {
@@ -250,12 +276,16 @@ function animate() {
     // Update chat bubbles
     updateChatBubbles();
     
-    renderer.render(scene, camera);
+    // Render scene
+    if (renderer && scene && camera) {
+        renderer.render(scene, camera);
+    }
 }
 
 function startGame() {
     const name = playerNameInput.value.trim();
     if (name) {
+        console.log('Starting game with name:', name);
         gameState.playerName = name;
         nameDisplay.textContent = name;
         menuScreen.classList.add('hidden');
