@@ -95,15 +95,23 @@ function initScene() {
         return;
     }
     
-    renderer = new THREE.WebGLRenderer({ 
-        canvas: canvas,
-        antialias: true,
-        alpha: true
-    });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    try {
+        renderer = new THREE.WebGLRenderer({ 
+            canvas: canvas,
+            antialias: true,
+            alpha: true
+        });
+        
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        
+        console.log('Renderer created successfully');
+    } catch (error) {
+        console.error('Error creating renderer:', error);
+        return;
+    }
     
     // Add lights
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -123,9 +131,14 @@ function initScene() {
     loadPenguinModel();
     
     // Add orbit controls
-    controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
+    try {
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        console.log('Controls created successfully');
+    } catch (error) {
+        console.error('Error creating controls:', error);
+    }
     
     // Start animation loop
     animate();
@@ -288,10 +301,18 @@ function startGame() {
         console.log('Starting game with name:', name);
         gameState.playerName = name;
         nameDisplay.textContent = name;
+        
+        // Hide menu and show game screen
         menuScreen.classList.add('hidden');
-        gameScreen.classList.remove('hidden');
+        gameScreen.style.display = 'block';
+        
+        // Initialize scene
         initScene();
+        
+        // Initialize multiplayer
         initMultiplayer();
+        
+        console.log('Game started successfully');
     } else {
         alert('Por favor, digite seu nome!');
     }

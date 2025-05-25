@@ -28,7 +28,20 @@
             z-index: 1000;
         }
         #game-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             display: none;
+        }
+        #game-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
         }
         .hidden {
             display: none !important;
@@ -42,6 +55,7 @@
             padding: 10px;
             border-radius: 5px;
             color: white;
+            z-index: 2;
         }
         #chat-messages {
             height: 200px;
@@ -61,6 +75,7 @@
             max-width: 200px;
             word-wrap: break-word;
             pointer-events: none;
+            z-index: 3;
         }
         #customization-panel {
             position: fixed;
@@ -70,6 +85,7 @@
             padding: 20px;
             border-radius: 5px;
             color: white;
+            z-index: 2;
         }
         #shop-panel {
             position: fixed;
@@ -79,6 +95,7 @@
             padding: 20px;
             border-radius: 5px;
             color: white;
+            z-index: 2;
         }
         #igloo-panel {
             position: fixed;
@@ -88,6 +105,7 @@
             padding: 20px;
             border-radius: 5px;
             color: white;
+            z-index: 2;
         }
         button {
             padding: 10px 20px;
@@ -113,6 +131,7 @@
             right: 20px;
             display: flex;
             gap: 10px;
+            z-index: 2;
         }
         #name-display {
             position: fixed;
@@ -123,6 +142,7 @@
             background: rgba(0, 0, 0, 0.7);
             padding: 5px 10px;
             border-radius: 5px;
+            z-index: 2;
         }
         #coins {
             position: fixed;
@@ -133,6 +153,7 @@
             background: rgba(0, 0, 0, 0.7);
             padding: 5px 10px;
             border-radius: 5px;
+            z-index: 2;
         }
     </style>
 </head>
