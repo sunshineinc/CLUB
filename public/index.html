@@ -107,6 +107,33 @@
             border-radius: 3px;
             border: 1px solid #ccc;
         }
+        #game-controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        #name-display {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 18px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+        #coins {
+            position: fixed;
+            top: 20px;
+            left: 200px;
+            color: white;
+            font-size: 18px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
@@ -118,6 +145,9 @@
 
     <div id="game-screen">
         <canvas id="game-canvas"></canvas>
+        
+        <div id="name-display"></div>
+        <div id="coins">Moedas: 0</div>
         
         <div id="chat-container">
             <div id="chat-messages"></div>
