@@ -21,7 +21,8 @@ const gameState = {
     chatBubbles: new Map(),
     currentMinigame: null,
     otherPlayers: new Map(),
-    socket: null
+    socket: null,
+    currentLocation: 'town'
 };
 
 // Three.js variables
@@ -135,6 +136,9 @@ function initScene() {
         controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2;
+        controls.minDistance = 5;
+        controls.maxDistance = 20;
         console.log('Controls created successfully');
     } catch (error) {
         console.error('Error creating controls:', error);
@@ -232,6 +236,9 @@ function loadPenguinModel() {
         }
     });
     
+    // Posicionar o pinguim acima do chão
+    penguin.position.set(0, 1, 0);
+    
     gameState.penguin.model = penguin;
     scene.add(penguin);
     
@@ -309,6 +316,9 @@ function startGame() {
         // Initialize scene
         initScene();
         
+        // Create map
+        createMap();
+        
         // Initialize multiplayer
         initMultiplayer();
         
@@ -339,11 +349,26 @@ function handleKeyUp(event) {
 
 function sendMessage() {
     const message = chatInput.value.trim();
-    if (message && gameState.socket && gameState.socket.readyState === WebSocket.OPEN) {
-        gameState.socket.send(JSON.stringify({
-            type: 'chat',
-            message: message
-        }));
+    if (message) {
+        console.log('Sending message:', message);
+        
+        // Adicionar mensagem ao chat local
+        const chatMessage = document.createElement('div');
+        chatMessage.textContent = `${gameState.playerName}: ${message}`;
+        chatMessages.appendChild(chatMessage);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        // Criar bolha de chat
+        createChatBubble(message);
+        
+        // Enviar mensagem para o servidor
+        if (gameState.socket && gameState.socket.readyState === WebSocket.OPEN) {
+            gameState.socket.send(JSON.stringify({
+                type: 'chat',
+                message: message,
+                playerName: gameState.playerName
+            }));
+        }
         
         chatInput.value = '';
     }
@@ -358,8 +383,19 @@ function createChatBubble(message) {
     const id = Date.now();
     gameState.chatBubbles.set(id, {
         element: bubble,
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        message: message
     });
+    
+    // Posicionar a bolha acima do pinguim
+    if (gameState.penguin.model) {
+        const screenPos = gameState.penguin.model.position.clone();
+        screenPos.project(camera);
+        const x = (screenPos.x * 0.5 + 0.5) * window.innerWidth;
+        const y = (-screenPos.y * 0.5 + 0.5) * window.innerHeight;
+        bubble.style.left = `${x}px`;
+        bubble.style.top = `${y - 50}px`;
+    }
 }
 
 function updateChatBubbles() {
@@ -380,6 +416,8 @@ function updateChatBubbles() {
 }
 
 function saveCustomization() {
+    console.log('Saving customization...');
+    
     const color = penguinColorInput.value;
     const hat = hatSelect.value;
     const clothes = clothesSelect.value;
@@ -393,10 +431,15 @@ function saveCustomization() {
     // Update penguin model
     if (gameState.penguin.model) {
         gameState.penguin.model.traverse((node) => {
-            if (node.isMesh && node.name === 'body') {
-                node.material.color.setHex(gameState.penguin.color);
+            if (node.isMesh) {
+                if (node.name === 'body' || node.name === 'head' || node.name === 'leftWing' || node.name === 'rightWing') {
+                    node.material.color.setHex(gameState.penguin.color);
+                }
             }
         });
+        
+        // Adicionar acessórios
+        addAccessories(hat, clothes, accessories);
     }
     
     // Send customization to server
@@ -411,6 +454,46 @@ function saveCustomization() {
     }
     
     customizationPanel.classList.add('hidden');
+    console.log('Customization saved successfully');
+}
+
+function addAccessories(hat, clothes, accessories) {
+    // Remover acessórios existentes
+    gameState.penguin.model.children.forEach(child => {
+        if (child.userData && child.userData.isAccessory) {
+            gameState.penguin.model.remove(child);
+        }
+    });
+    
+    // Adicionar chapéu
+    if (hat !== 'none') {
+        const hatGeometry = new THREE.ConeGeometry(0.5, 1, 32);
+        const hatMaterial = new THREE.MeshStandardMaterial({ color: 0xFF0000 });
+        const hatMesh = new THREE.Mesh(hatGeometry, hatMaterial);
+        hatMesh.position.y = 1.8;
+        hatMesh.userData = { isAccessory: true };
+        gameState.penguin.model.add(hatMesh);
+    }
+    
+    // Adicionar roupas
+    if (clothes !== 'none') {
+        const clothesGeometry = new THREE.BoxGeometry(1.2, 1, 0.8);
+        const clothesMaterial = new THREE.MeshStandardMaterial({ color: 0x0000FF });
+        const clothesMesh = new THREE.Mesh(clothesGeometry, clothesMaterial);
+        clothesMesh.position.y = 0;
+        clothesMesh.userData = { isAccessory: true };
+        gameState.penguin.model.add(clothesMesh);
+    }
+    
+    // Adicionar acessórios
+    if (accessories !== 'none') {
+        const accessoryGeometry = new THREE.SphereGeometry(0.2, 32, 32);
+        const accessoryMaterial = new THREE.MeshStandardMaterial({ color: 0xFFFF00 });
+        const accessoryMesh = new THREE.Mesh(accessoryGeometry, accessoryMaterial);
+        accessoryMesh.position.set(0, 1.2, 0.5);
+        accessoryMesh.userData = { isAccessory: true };
+        gameState.penguin.model.add(accessoryMesh);
+    }
 }
 
 // Minigames
@@ -912,4 +995,60 @@ function customizePenguin(color, hat, clothes, accessories) {
         clothes: clothes,
         accessories: accessories
     }));
+}
+
+// Adicionar função para criar o mapa
+function createMap() {
+    const mapContainer = document.createElement('div');
+    mapContainer.id = 'map-container';
+    mapContainer.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 20px;
+        border-radius: 5px;
+        color: white;
+        z-index: 1000;
+    `;
+    
+    const locations = [
+        { id: 'town', name: 'Town Center' },
+        { id: 'igloo', name: 'My Igloo' },
+        { id: 'sled', name: 'Sled Race' },
+        { id: 'fishing', name: 'Fishing' },
+        { id: 'dance', name: 'Dance Club' }
+    ];
+    
+    locations.forEach(location => {
+        const button = document.createElement('button');
+        button.textContent = location.name;
+        button.onclick = () => changeLocation(location.id);
+        mapContainer.appendChild(button);
+    });
+    
+    document.body.appendChild(mapContainer);
+}
+
+function changeLocation(locationId) {
+    gameState.currentLocation = locationId;
+    
+    // Enviar atualização para o servidor
+    if (gameState.socket && gameState.socket.readyState === WebSocket.OPEN) {
+        gameState.socket.send(JSON.stringify({
+            type: 'change_location',
+            location: locationId
+        }));
+    }
+    
+    // Atualizar a cena baseado na localização
+    switch(locationId) {
+        case 'igloo':
+            initIglooScene();
+            break;
+        case 'town':
+            initScene();
+            break;
+        // Adicionar outros casos conforme necessário
+    }
 } 
